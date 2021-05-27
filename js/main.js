@@ -3,8 +3,50 @@ const _url =
 let data_result = "";
 let cat_result = `<option value="all">Semua</option>`;
 let categories = [];
-$(document).ready(function () {
-  updateProduct("all");
+$(document).ready(() => {
+  let renderPage = (data) => {
+    data.forEach((items) => {
+      const _cat = items.category;
+      data_result += `<div>
+            <h3>${items.name}</h3>
+            <p>${_cat}</p>
+            </div>`;
+      if (categories.indexOf(_cat) === -1) {
+        categories.push(_cat);
+        cat_result += `<option value="${_cat}">${_cat}</option>`;
+      }
+    });
+    $("#products").html(data_result);
+    $("#cat_select").html(cat_result);
+  };
+  let networkDataRecivied = false;
+
+  //fresh data form online
+  let networkUpdate = fetch(_url)
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      networkDataRecivied = true;
+      renderPage(data);
+    });
+
+  //return from cache
+  caches
+    .match(_url)
+    .then((response) => {
+      if (response) throw Error("no data on cache");
+      return response.json();
+    })
+    .then((data) => {
+      if (!networkDataRecivied) {
+        renderPage(data);
+        console.log("render data form cache");
+      }
+    })
+    .catch(() => {
+      return networkUpdate;
+    });
   //fungsi filter
   $("#cat_select").on("change", function () {
     updateProduct(this.value, 1);
